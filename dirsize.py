@@ -2,10 +2,16 @@ import os
 import sys
 import getopt
 
-def add_color(string, color):
+hidden = []
+
+def add_color(string, color, col):
 	"""
 	Add color to a string for console output
 	"""
+
+	if col is False:
+		return string
+
 	COLORS = {
 		'red': '\033[0;31m',
 		'green': '\033[0;32m',
@@ -33,25 +39,30 @@ def get_sizes_start(start_path, total_size):
 	directories = []
 	files = []
 
-	nodes = list(os.walk(start_path))[0]
+	if os.path.isfile(start_path):
+		total_size[0] = os.path.getsize(start_path)
+		return total_size[0], directories, files
 
-	dirpath, dirnames, filenames = nodes
+	get_sizes_recursive(start_path, directories, files, total_size)
 
-	for f in filenames:
-		fp = os.path.join(dirpath, f)
-		total_size[0] += os.path.getsize(fp)
-		files.append((fp, os.path.getsize(fp)))
-
-	for d in dirnames:
-		dp = os.path.join(dirpath, d)
-		get_sizes_recursive(dp, directories, files, total_size)
+	for d in directories:
+		if d[0] == start_path:
+			directories.remove(d)
+			break
 
 	return total_size[0], directories, files
 
-def get_sizes_recursive(start_path, directories, files , total_size):
+def get_sizes_recursive(start_path, directories, files, total_size):
 	"""
 	Recursive helper function to get directory and file lists
 	"""
+
+	try:
+		os.listdir(start_path)
+	except OSError:
+		hidden.append(start_path)
+		return 0
+
 	nodes = list(os.walk(start_path))[0]
 
 	size = 0
@@ -59,9 +70,12 @@ def get_sizes_recursive(start_path, directories, files , total_size):
 
 	for f in filenames:
 		fp = os.path.join(dirpath, f)
-		size += os.path.getsize(fp)
-		total_size[0] += os.path.getsize(fp)
-		files.append((fp, os.path.getsize(fp)))
+		fs = 0
+		if os.path.isfile(fp):
+			fs = os.path.getsize(fp)
+			files.append((fp, fs))
+			size += fs
+		total_size[0] += fs
 
 	for d in dirnames:
 		dp = os.path.join(dirpath, d)
@@ -80,15 +94,15 @@ def format_size(size_in_bytes):
 	size = None
 	units = 'B'
 
-	if size_in_bytes > 1024 ** 3:
+	if size_in_bytes >= 1024 ** 3:
 		size = float(size_in_bytes)/(1024 ** 3)
 		units = 'GB'
 
-	elif size_in_bytes > 1024 ** 2:
+	elif size_in_bytes >= 1024 ** 2:
 		size = float(size_in_bytes)/(1024 ** 2)
 		units = 'MB'
 
-	elif size_in_bytes > 1024:
+	elif size_in_bytes >= 1024:
 		size = float(size_in_bytes)/(1024)
 		units = 'KB'
 	else:
@@ -103,12 +117,13 @@ def unformat_size(size):
 	toks = size.split('-')
 
 	size = float(toks[0])
+	units = toks[1].upper()
 
-	if toks[1] == 'GB':
+	if units == 'GB':
 		size = size * (1024 ** 3)
-	if toks[1] == 'MB':
+	if units == 'MB':
 		size = size * (1024 ** 2)
-	if toks[1] == 'KB':
+	if units == 'KB':
 		size = size * 1024
 
 	return size
@@ -116,25 +131,35 @@ def unformat_size(size):
 
 def main():
 	#Parse command line arguments
-	opts, args = getopt.getopt(sys.argv[1:], "ec:p:m:")
+	opts, args = getopt.getopt(sys.argv[1:], "cfden:p:m:")
 
 	count = None
+	col = True
 	empty = False
 	min_size = None
+	get_file = True
+	get_dir = True
 	start_path = '.'
-	total_size = [0]
 
 	for flag, val in opts:
-		if flag == '-c':
+		if flag == '-n':
 			count = int(val)
-		if flag == '-e':
+		elif flag == '-e':
 			empty = True
-		if flag == '-p':
+		elif flag == '-p':
 			start_path = val
-		if flag == '-m':
+		elif flag == '-m':
 			min_size = val
+		elif flag == '-f':
+			get_dir = False
+		elif flag == '-d':
+			get_file = False
+		elif flag == '-c':
+			col = False
+
 
 	#Get the total size, directory and file lists
+	total_size = [0]
 	size, dirs, files = get_sizes_start(start_path, total_size)
 	empty_dirs = []
 
@@ -158,22 +183,31 @@ def main():
 		files = [f for f in files if f[1] >= min_size]
 
 	#Print out size information
-	print("Largest directories:")
-	for d in dirs:
-		print(add_color(d[0], 'green') + ' | ' + add_color(format_size(d[1]), 'cyan'))
+	print("")
+	if hidden != []:
+		print("The following directories could not be accessed:")
+		for h in hidden:
+			print(h)
+		print("")
+
+	if get_dir:
+		print("Directories:")
+		for d in dirs:
+				print(add_color(d[0], 'green', col) + ' | ' + add_color(format_size(d[1]), 'cyan', col))
 	print("")
 
 	if empty is True:
 		print("Empty directories:")
 		for ed in empty_dirs:
-			print(add_color(ed[0], 'green') + ' | ' + add_color(format_size(ed[1]), 'cyan'))
+			print(add_color(ed[0], 'green', col) + ' | ' + add_color(format_size(ed[1]), 'cyan', col))
 		print("")
 
-	print("Largest files:")
-	for f in files:
-		print(add_color(f[0], 'green') + ' | ' + add_color(format_size(f[1]), 'cyan'))
+	if get_file:
+		print("Files:")
+		for f in files:
+			print(add_color(f[0], 'green', col) + ' | ' + add_color(format_size(f[1]), 'cyan', col))
 
-	print("Total size: " + add_color(format_size(size), 'red'))
+	print("\nTotal size: " + add_color(format_size(size), 'red', col))
 
 
 if __name__ == "__main__":
