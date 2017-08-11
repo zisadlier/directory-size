@@ -21,11 +21,13 @@ Note: If both -f and -d are present only the total size of the root directory wi
 ## Use
 
 The following example displays both files and subdirectories of /tmp larger than 10 KB
+
 `
 python dirsize.py -p /tmp -m 10-kb
 `
 
 This next example shows the top 10 largest files and all empty subdirectories under .
+
 `
 python dirsize.py -n 10 -f -e
 `
