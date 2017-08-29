@@ -10,6 +10,7 @@ Get a the total size, largest subdirectories and largest files within a certain 
 * -c: Disable colored output
 * -f: Only list files
 * -d: Only list subdirectories
+* -h: Hide any hidden directories and their contents
 
 Note: If both -f and -d are present only the total size of the root directory will be displayed
 

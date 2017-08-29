@@ -1,6 +1,7 @@
 import os
 import sys
 import getopt
+import re
 
 hidden = []
 
@@ -128,10 +129,19 @@ def unformat_size(size):
 
 	return size
 
+def is_hidden(path):
+	if re.match('^./', path):
+		path = path[1:]
+
+	if path.count('/.'):
+		return True
+
+	return False
+
 
 def main():
 	#Parse command line arguments
-	opts, args = getopt.getopt(sys.argv[1:], "cfden:p:m:")
+	opts, args = getopt.getopt(sys.argv[1:], "hcfden:p:m:")
 
 	count = None
 	col = True
@@ -139,6 +149,7 @@ def main():
 	min_size = None
 	get_file = True
 	get_dir = True
+	show_hidden = True
 	start_path = '.'
 
 	for flag, val in opts:
@@ -156,6 +167,8 @@ def main():
 			get_file = False
 		elif flag == '-c':
 			col = False
+		elif flag == '-h':
+			show_hidden = False
 
 
 	#Get the total size, directory and file lists
@@ -173,14 +186,18 @@ def main():
 			if d[1] == 0:
 				empty_dirs.append(d)
 
-	if count is not None:
-		dirs = dirs[:count]
-		files = files[:count]
+	if show_hidden is False:
+		dirs = [d for d in dirs if not is_hidden(d[0])]
+		files = [f for f in files if not is_hidden(f[0])]
 
 	if min_size is not None:
 		min_size = unformat_size(min_size)
 		dirs = [d for d in dirs if d[1] >= min_size]
 		files = [f for f in files if f[1] >= min_size]
+
+	if count is not None:
+		dirs = dirs[:count]
+		files = files[:count]
 
 	#Print out size information
 	print("")
