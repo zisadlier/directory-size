@@ -1,7 +1,8 @@
 import os
 import sys
-import getopt
 import re
+
+import click
 
 hidden = []
 
@@ -138,42 +139,19 @@ def is_hidden(path):
 
 	return False
 
-
-def main():
-	#Parse command line arguments
-	opts, args = getopt.getopt(sys.argv[1:], "hcfden:p:m:")
-
-	count = None
-	col = True
-	empty = False
-	min_size = None
-	get_file = True
-	get_dir = True
-	show_hidden = True
-	start_path = '.'
-
-	for flag, val in opts:
-		if flag == '-n':
-			count = int(val)
-		elif flag == '-e':
-			empty = True
-		elif flag == '-p':
-			start_path = val
-		elif flag == '-m':
-			min_size = val
-		elif flag == '-f':
-			get_dir = False
-		elif flag == '-d':
-			get_file = False
-		elif flag == '-c':
-			col = False
-		elif flag == '-h':
-			show_hidden = False
-
-
+@click.command()
+@click.option('-n', '--count', type=int, help='Directory and file count limit')
+@click.option('-c', '--color', is_flag=True, help='If present, uses colored text in some output')
+@click.option('-e', '--empty', is_flag=True, help='If present, displays empty directories')
+@click.option('-m', '--min-size', help='Minimum size for a file/directory to be counted')
+@click.option('-d', '--get-dir', is_flag=True, help='If present, displays data for individual directories')
+@click.option('-f', '--get-file', is_flag=True, help='If present, displays data for individual files')
+@click.option('-h', '--show-hidden', is_flag=True, help='If present, displays data for hidden directories and files')
+@click.option('-p', '--path', default='.', help='Path to get the directory size of')
+def main(count: int, color: bool, empty: bool, min_size: str, get_dir: bool, get_file: bool, show_hidden: bool, path: str):
 	#Get the total size, directory and file lists
 	total_size = [0]
-	size, dirs, files = get_sizes_start(start_path, total_size)
+	size, dirs, files = get_sizes_start(path, total_size)
 	empty_dirs = []
 
 	#Sort the directory and file lists by size
@@ -210,21 +188,21 @@ def main():
 	if get_dir:
 		print("Directories:")
 		for d in dirs:
-				print(add_color(d[0], 'green', col) + ' | ' + add_color(format_size(d[1]), 'cyan', col))
+				print(add_color(d[0], 'green', color) + ' | ' + add_color(format_size(d[1]), 'cyan', color))
 	print("")
 
 	if empty is True:
 		print("Empty directories:")
 		for ed in empty_dirs:
-			print(add_color(ed[0], 'green', col) + ' | ' + add_color(format_size(ed[1]), 'cyan', col))
+			print(add_color(ed[0], 'green', color) + ' | ' + add_color(format_size(ed[1]), 'cyan', color))
 		print("")
 
 	if get_file:
 		print("Files:")
 		for f in files:
-			print(add_color(f[0], 'green', col) + ' | ' + add_color(format_size(f[1]), 'cyan', col))
+			print(add_color(f[0], 'green', color) + ' | ' + add_color(format_size(f[1]), 'cyan', color))
 
-	print("\nTotal size: " + add_color(format_size(size), 'red', col))
+	print("\nTotal size: " + add_color(format_size(size), 'red', color))
 
 
 if __name__ == "__main__":
