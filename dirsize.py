@@ -115,11 +115,18 @@ def is_hidden(path):
 
     return False
 
+def validate_min_size(ctx, param, value):
+    try:
+        unformat_size(value)
+    except (ValueError, IndexError):
+        raise click.BadParameter('min-size must be a valid size string, e.g., "10-MB"')
+    return value
+
 @click.command()
 @click.option('-n', '--count', type=int, help='Directory and file count limit')
 @click.option('-c', '--color', is_flag=True, help='If present, uses colored text in some output')
 @click.option('-e', '--empty', is_flag=True, help='If present, displays empty directories')
-@click.option('-m', '--min-size', help='Minimum size for a file/directory to be counted')
+@click.option('-m', '--min-size', type=click.STRING, callback=validate_min_size, help='Minimum size for a file/directory to be counted')
 @click.option('-d', '--get-dir', is_flag=True, help='If present, displays data for individual directories')
 @click.option('-f', '--get-file', is_flag=True, help='If present, displays data for individual files')
 @click.option('-s', '--show-hidden', is_flag=True, help='If present, displays data for hidden directories and files')
