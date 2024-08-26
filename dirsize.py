@@ -122,7 +122,7 @@ def is_hidden(path):
 @click.option('-m', '--min-size', help='Minimum size for a file/directory to be counted')
 @click.option('-d', '--get-dir', is_flag=True, help='If present, displays data for individual directories')
 @click.option('-f', '--get-file', is_flag=True, help='If present, displays data for individual files')
-@click.option('-h', '--show-hidden', is_flag=True, help='If present, displays data for hidden directories and files')
+@click.option('-s', '--show-hidden', is_flag=True, help='If present, displays data for hidden directories and files')
 @click.option('-p', '--path', default='.', help='Path to get the directory size of')
 def main(count: int, color: bool, empty: bool, min_size: str, get_dir: bool, get_file: bool, show_hidden: bool, path: str):
     #Get the total size, directory and file lists
